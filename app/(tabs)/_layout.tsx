@@ -1,0 +1,85 @@
+import { BlurView } from 'expo-blur';
+import { Tabs } from 'expo-router';
+import { Platform, StyleSheet } from 'react-native';
+import { Home, MessageSquare, Book, Bookmark } from 'lucide-react-native';
+
+const isWeb = Platform.OS === 'web';
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarBackground: () =>
+          isWeb ? null : <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />,
+        tabBarActiveTintColor: '#6f5415',
+        tabBarInactiveTintColor: '#987a59',
+        tabBarLabelStyle: styles.tabBarLabel,
+        tabBarItemStyle: styles.tabBarItem,
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="diagnose"
+        options={{
+          title: 'Diagnose',
+          tabBarIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="guide"
+        options={{
+          title: 'Guide',
+          tabBarIcon: ({ color, size }) => <Book size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="saved"
+        options={{
+          title: 'Saved',
+          tabBarIcon: ({ color, size }) => <Bookmark size={size} color={color} />,
+        }}
+      />
+    </Tabs>
+  );
+}
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: 'absolute',
+    marginHorizontal: 20,
+    bottom: 20,
+    borderRadius: 20,
+    height: 70,
+    backgroundColor: isWeb ? 'rgba(255, 255, 255, 0.9)' : 'transparent',
+    borderTopWidth: 0,
+    elevation: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    ...Platform.select({
+      ios: {
+        overflow: 'hidden',
+      },
+    }),
+  },
+  tabBarLabel: {
+    fontFamily: 'Nunito-Regular',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  tabBarItem: {
+    height: 70,
+    paddingTop: 12,
+  },
+});
