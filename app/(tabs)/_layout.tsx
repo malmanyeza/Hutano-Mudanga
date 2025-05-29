@@ -11,8 +11,13 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarBackground: () =>
-          isWeb ? null : <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />,
+        tabBarBackground: () => {
+          if (isWeb) return null;
+          if (Platform.OS === 'ios') {
+            return <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />;
+          }
+          return null;
+        },
         tabBarActiveTintColor: '#6f5415',
         tabBarInactiveTintColor: '#987a59',
         tabBarLabelStyle: styles.tabBarLabel,
@@ -57,21 +62,28 @@ const styles = StyleSheet.create({
     bottom: 20,
     borderRadius: 20,
     height: 70,
-    backgroundColor: isWeb ? 'rgba(255, 255, 255, 0.9)' : 'transparent',
-    borderTopWidth: 0,
-    elevation: 0,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
     ...Platform.select({
+      web: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
       ios: {
+        backgroundColor: 'transparent',
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        backgroundColor: '#ffffff',
+        elevation: 4,
       },
     }),
+    borderTopWidth: 0,
   },
   tabBarLabel: {
     fontFamily: 'Nunito-Regular',
