@@ -12,7 +12,7 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const handleStartDiagnosis = () => {
-    router.push('/diagnose');
+    router.push('/screens/diagnose');
   };
 
   return (
@@ -55,11 +55,11 @@ export default function HomeScreen() {
           {/* Quick Tools */}
           <Text style={styles.sectionTitle}>Quick Access</Text>
           <View style={styles.quickTools}>
-            <Link href="/guide" asChild>
+            <Link href="/screens/diagnose" asChild>
               <TouchableOpacity style={styles.quickTool}>
                 <BlurContainer intensity={80} tint="light" style={styles.quickToolInner}>
-                  <BookOpen size={24} color="#c89826" />
-                  <Text style={styles.toolText.text}>Disease Guide</Text>
+                  <Stethoscope size={24} color="#c89826" />
+                  <Text style={styles.toolText.text}>Diagnose</Text>
                 </BlurContainer>
               </TouchableOpacity>
             </Link>

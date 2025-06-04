@@ -187,12 +187,12 @@ export default function GuideScreen() {
 
   return (
     <LinearGradient colors={['#edcc9a', '#92ccce']} style={styles.container}>
-      <LinearGradient colors={['#edcc9a', '#92ccce']} style={styles.header}>
-        <View  style={styles.headerContent}>
+      <BlurContainer intensity={80} tint="light" style={styles.header}>
+        <BlurContainer intensity={80} tint="light" style={styles.headerContent}>
           <Text style={styles.title}>Disease Guide</Text>
           <Text style={styles.subtitle}>Common cattle diseases and their treatments</Text>
-        </View>
-      </LinearGradient>
+        </BlurContainer>
+      </BlurContainer>
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.contentContainer}
@@ -372,6 +372,11 @@ const styles = StyleSheet.create({
   header: {
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: Platform.select({
+      web: 'rgba(237, 204, 154, 0.95)',
+      ios: colors.background.transparent,
+      android: 'rgba(237, 204, 154, 0.95)',
+    }),
   },
   headerContent: {
     paddingHorizontal: spacing.lg,

@@ -1,0 +1,5 @@
+.gradle
+android/.gradle
+node_modules
+*.log
+*.lock

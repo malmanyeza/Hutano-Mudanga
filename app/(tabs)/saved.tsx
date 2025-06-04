@@ -36,6 +36,10 @@ export default function SavedScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
 
+  const removeAsterisks = (text: string) => {
+    return text.replace(/\*/g, '');
+  };
+
   const handleStatusClick = async (status: SavedDiagnosis['status']) => {
     if (!selectedDiagnosis?.id) return;
     
@@ -55,11 +59,22 @@ export default function SavedScreen() {
   };
 
   return (
-    <LinearGradient colors={['#edcc9a', '#92ccce']} style={styles.container}>
+    <LinearGradient
+      colors={['#edcc9a', '#92ccce']}
+      style={styles.gradientContainer}
+    >
+      {/* Fixed Header */}
+      <View style={styles.header}>
+        <BlurContainer intensity={80} tint="light" style={styles.headerContent}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerText}>
+              <Text style={styles.title}>Saved Diagnoses</Text>
+              <Text style={styles.subtitle}>View and manage your saved diagnoses</Text>
+            </View>
+          </View>
+        </BlurContainer>
+      </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.title}>Saved Diagnoses</Text>
-        <Text style={styles.subtitle}>Your cattle's health history</Text>
-
         {savedDiagnoses.map((diagnosis: SavedDiagnosis) => (
           <TouchableOpacity 
             key={diagnosis.id} 
@@ -67,7 +82,7 @@ export default function SavedScreen() {
             activeOpacity={0.8}
           >
             <BlurContainer intensity={80} tint="light" style={styles.diagnosisCard}>
-              <View style={styles.header}>
+              <View style={styles.cardHeader}>
                 <View style={styles.titleContainer}>
                   <Text style={styles.condition}>{diagnosis.condition || 'Unknown Disease'}</Text>
                   <Text style={styles.date}>{diagnosis.date || new Date().toLocaleDateString()}</Text>
@@ -143,7 +158,7 @@ export default function SavedScreen() {
                     {/* Detailed Information */}
                     
                     <Text style={styles.sectionContent}>
-                      {selectedDiagnosis.notes?.message || 'No notes added'}
+                      {selectedDiagnosis.notes?.message ? removeAsterisks(selectedDiagnosis.notes.message) : 'No notes added'}
                     </Text>
                   </ScrollView>
                 </View>
@@ -157,16 +172,29 @@ export default function SavedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradientContainer: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
+  header: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
   },
-  contentContainer: {
-    padding: spacing.lg,
+  headerContent: {
+    paddingHorizontal: spacing.lg,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: spacing.xl * 4,
+    paddingBottom: spacing.lg,
+    backgroundColor: Platform.select({
+      web: 'rgba(237, 204, 154, 0.95)',
+      ios: colors.background.transparent,
+      android: 'rgba(237, 204, 154, 0.95)',
+    }),
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerText: {
+    flex: 1,
   },
   title: {
     ...typography.title,
@@ -177,6 +205,14 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
     color: colors.text.secondary,
     marginBottom: spacing.xl,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl * 4,
   },
   diagnosisCard: {
     backgroundColor: Platform.select({
@@ -199,7 +235,7 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  header: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

@@ -1,19 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Keyboard, Modal, Pressable, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TextInput, 
+  TouchableOpacity, 
+  ScrollView, 
+  Keyboard, 
+  Modal, 
+  Pressable, 
+  ActivityIndicator,
+  Platform,
+  KeyboardEvent,
+  Dimensions
+} from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Send, Save, X, ChevronDown } from 'lucide-react-native';
-import { Platform } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { Send, Save, X, ArrowLeft } from 'lucide-react-native';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useDiagnosisAssistant } from '../../hooks/DiagnosisAssistantContext';
+
+import { colors, typography, spacing, layout } from '../../styles/shared';
 
 const isWeb = Platform.OS === 'web';
 const BlurContainer = isWeb ? View : BlurView;
+const screenHeight = Dimensions.get('window').height;
 
 export default function DiagnoseScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(false);
   const { symptoms } = useLocalSearchParams<{ symptoms: string }>();
   const [inputText, setInputText] = useState(symptoms || '');
   const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
@@ -26,6 +40,7 @@ export default function DiagnoseScreen() {
   } | null>(null);
   const [diagnosisNotes, setDiagnosisNotes] = useState('');
 
+
   const {
     assistantMessages,
     sendDiagnosisMessage,
@@ -34,40 +49,33 @@ export default function DiagnoseScreen() {
     saveDiagnosis
   } = useDiagnosisAssistant();
 
-  // Auto-scroll when messages change
+  // Auto-scroll when messages change or when keyboard appears/disappears
   useEffect(() => {
     if (assistantMessages.length > 0) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
+      return () => clearTimeout(timer);
     }
   }, [assistantMessages]);
 
+  // Send initial symptoms if provided
   useEffect(() => {
     if (symptoms && symptoms.trim()) {
-      // Send initial symptoms as a message
       sendDiagnosisMessage(symptoms);
       setInputText('');
     }
-    const keyboardWillShow = Platform.OS === 'ios'
-      ? Keyboard.addListener('keyboardWillShow', () => setKeyboardVisible(true))
-      : Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
-    const keyboardWillHide = Platform.OS === 'ios'
-      ? Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false))
-      : Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
-  }, []);
+  }, [symptoms]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isAssistantProcessing) return;
+    
     // Add user message to chat and send to assistant
     setAssistantMessages((prev: any[]) => ([
       ...prev,
       { role: 'user', content: inputText }
     ]));
+    
     sendDiagnosisMessage(inputText);
     setInputText('');
   };
@@ -157,111 +165,73 @@ export default function DiagnoseScreen() {
       <View style={styles.loadingContainer}>
         <ActivityIndicator color="#c89826" size="small" />
         <Text style={styles.loadingText}>{steps[currentStep]}</Text>
-        <View style={styles.dotsContainer}>
-          {[0, 1, 2].map((dot) => (
-            <View
-              key={dot}
-              style={[styles.dot, { opacity: (Date.now() / 500) % 3 === dot ? 1 : 0.3 }]}
-            />
-          ))}
-        </View>
       </View>
     );
   };
 
+  // Calculate input position based on keyboard state
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? -10 : 0}
-    >
+    <View style={styles.container}>
       <LinearGradient
         colors={['#edcc9a', '#92ccce']}
         style={styles.gradientContainer}
-        locations={[0, 0.5, 1]}
       >
         {/* Fixed Header */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.title}>AI Diagnosis Assistant</Text>
-          <Text style={styles.subtitle}>Describe your cattle's symptoms in detail</Text>
+        <View style={styles.header}>
+          <BlurContainer intensity={80} tint="light" style={styles.headerContent}>
+            <View style={styles.headerRow}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => router.back()}
+              >
+                <ArrowLeft size={24} color="#34444c" />
+              </TouchableOpacity>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>AI Diagnosis Assistant</Text>
+                <Text style={styles.subtitle}>Describe your cattle's symptoms in detail</Text>
+              </View>
+            </View>
+          </BlurContainer>
         </View>
 
         <ScrollView 
           ref={scrollViewRef}
-          style={styles.scrollView} 
+          style={styles.scrollView}
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
-          bounces={false}
-          onScroll={({ nativeEvent }) => {
-            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-            const paddingToBottom = 20;
-            const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= 
-              contentSize.height - paddingToBottom;
-            setShowScrollButton(!isCloseToBottom);
-          }}
-          scrollEventThrottle={400}>
-
-        <View style={styles.chatContainer}>
-          {assistantMessages.map((message: any, index: number) => (
-            <View key={index} style={[
-              styles.messageContainer,
-              message.role === 'user' ? styles.userMessage : styles.aiMessage
-            ]}>
-              <Text style={styles.message}>{message.content}</Text>
-              
-              {/* Only show save button for messages with disease information */}
-              {message.role === 'assistant' && isDiseaseInformation(message.content) && (
-                <TouchableOpacity 
-                  style={styles.saveButton}
-                  onPress={() => handleSaveDiagnosis(message)}
-                >
-                  <Save size={16} color="#6f5415" />
-                  <Text style={styles.saveButtonText}>Save Diagnosis</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
-          {renderLoadingIndicator()}
-        </View>
+          keyboardDismissMode="interactive"
+          scrollEventThrottle={400}
+        >
+          <View style={styles.chatContainer}>
+            {assistantMessages.map((message: any, index: number) => (
+              <View key={index} style={[
+                styles.messageContainer,
+                message.role === 'user' ? styles.userMessage : styles.aiMessage
+              ]}>
+                <Text style={[styles.message, message.role === 'user' ? { color: '#fff' } : null]}>
+                {message.content}
+                
+                </Text>
+                {/* Only show save button for messages with disease information */}
+                {message.role === 'assistant' && isDiseaseInformation(message.content) && (
+                  <TouchableOpacity 
+                    style={styles.saveButton}
+                    onPress={() => handleSaveDiagnosis(message)}
+                  >
+                    <Save size={16} color="#6f5415" />
+                    <Text style={styles.saveButtonText}>Save Diagnosis</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+            {renderLoadingIndicator()}
+          </View>
         </ScrollView>
 
-        {/* Scroll down button */}
-        {showScrollButton && (
-          <TouchableOpacity 
-            style={styles.scrollDownButton}
-            onPress={() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true });
-            }}
-          >
-            <ChevronDown size={24} color="#6f5415" />
-          </TouchableOpacity>
-        )}
 
-        {/* Bottom blur overlay - iOS only */}
-        {Platform.OS === 'ios' && (
-          <>
-            <BlurContainer 
-              intensity={80} 
-              tint="light" 
-              style={[styles.bottomBlur, { 
-                maxHeight: keyboardVisible ? 80 : 200
-              }]}
-            />
-            {/* Additional gradient overlay */}
-            <LinearGradient
-              colors={['transparent', 'rgba(237, 204, 154, 0.95)']}
-              style={[styles.bottomGradient, { 
-                maxHeight: keyboardVisible ? 100 : 200
-              }]}
-            />
-          </>
-        )}
-        
-        {/* Input area */}
-        <View style={[styles.inputWrapper, { 
-          bottom: keyboardVisible ? 10 : Platform.OS === 'ios' ? 100 : 100,
-          maxHeight: keyboardVisible ? 100 : 150
-        }]}>
+
+        {/* Input area - positioned above tab bar */}
+        <View style={styles.inputWrapper}>
           <View style={styles.inputContainer}>
             <TextInput
               onFocus={() => {
@@ -269,7 +239,7 @@ export default function DiagnoseScreen() {
                   scrollViewRef.current?.scrollToEnd({ animated: true });
                 }, 50);
               }}
-              style={[styles.input, keyboardVisible && styles.inputWithKeyboard]}
+              style={styles.input}
               placeholder="Type your message..."
               placeholderTextColor="#987a59"
               multiline
@@ -286,6 +256,22 @@ export default function DiagnoseScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Bottom blur overlay - iOS only */}
+        {Platform.OS === 'ios' && (
+          <>
+            <BlurContainer 
+              intensity={80} 
+              tint="light" 
+              style={styles.bottomBlur}
+            />
+            {/* Additional gradient overlay */}
+            <LinearGradient
+              colors={['transparent', 'rgba(237, 204, 154, 0.95)']}
+              style={styles.bottomGradient}
+            />
+          </>
+        )}
 
         {/* Save Diagnosis Modal */}
         <Modal
@@ -327,36 +313,11 @@ export default function DiagnoseScreen() {
           </View>
         </Modal>
       </LinearGradient>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
-import { colors, typography, spacing, layout } from '../../styles/shared';
-
 const styles = StyleSheet.create({
-  scrollDownButton: {
-    position: 'absolute',
-    right: 20,
-    marginBottom: 20,
-    bottom: Platform.OS === 'ios' ? 170 : 170,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 25,
-    width: 35,
-    height: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
 
   loadingContainer: {
     flexDirection: 'row',
@@ -384,20 +345,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#c89826',
     marginHorizontal: 2,
   },
-  headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  header: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  headerContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.lg,
     backgroundColor: Platform.select({
-      ios: 'rgba(237, 204, 154, 0.95)',
+      web: 'rgba(237, 204, 154, 0.95)',
+      ios: colors.background.transparent,
       android: 'rgba(237, 204, 154, 0.95)',
-      default: 'rgba(237, 204, 154, 0.95)',
     }),
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerText: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -415,7 +391,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: Platform.OS === 'ios' ? 160 : 140,
+    height: 160,
     backgroundColor: isWeb ? 'transparent' : 'transparent',
   },
   bottomGradient: {
@@ -423,25 +399,22 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: Platform.OS === 'ios' ? 160 : 140,
+    height: 160,
     opacity: 0.95,
   },
   container: {
     flex: 1,
-    backgroundColor: '#c8e6c9',
+    backgroundColor: '#edcc9a',
   },
   gradientContainer: {
     flex: 1,
-    minHeight: '100%',
   },
   scrollView: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
   },
   contentContainer: {
     padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 130 : 130,
-    paddingBottom: Platform.OS === 'ios' ? 220 : 200,
+    flexGrow: 1,
   },
   title: {
     ...typography.title,
@@ -455,49 +428,54 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     flex: 1,
-    marginBottom: 20,
   },
   messageContainer: {
-    backgroundColor: Platform.select({
-      web: 'rgba(255, 255, 255, 0.98)',
-      ios: 'transparent',
-      android: 'rgb(255, 255, 255)',
-    }),
-    borderRadius: layout.borderRadius.medium,
+    borderRadius: 20,
     padding: spacing.md,
-    marginBottom: spacing.sm,
-    maxWidth: '80%',
+    marginBottom: spacing.md,
+    maxWidth: '85%',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        overflow: 'hidden',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
       },
       android: {
-        elevation: 4,
+        elevation: 2,
       },
     }),
   },
   userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: colors.primary,
+    backgroundColor: '#6f5415',
+    borderBottomRightRadius: 4,
+    marginLeft: '15%',
   },
   aiMessage: {
     alignSelf: 'flex-start',
+    backgroundColor: Platform.select({
+      web: 'rgba(255, 255, 255, 0.95)',
+      ios: 'rgba(255, 255, 255, 0.85)',
+      android: 'rgba(255, 255, 255, 0.95)',
+    }),
+    borderBottomLeftRadius: 4,
+    marginRight: '15%',
   },
   message: {
     ...typography.body,
-    color: colors.text.primary,
+    color: Platform.select({
+      ios: colors.text.primary,
+      android: colors.text.primary,
+      web: colors.text.primary,
+    }),
+    lineHeight: 20,
   },
   inputWrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingVertical: 10,
     backgroundColor: 'transparent',
+    marginTop: 'auto',
   },
   inputContainer: {
     backgroundColor: Platform.select({
@@ -527,10 +505,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Regular',
     fontSize: 16,
     color: '#34444c',
-    maxHeight: 100,
-  },
-  inputWithKeyboard: {
-    maxHeight: 60,
+    maxHeight: 80,
   },
   iconButton: {
     marginLeft: 10,

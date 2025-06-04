@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
-import { Home, MessageSquare, Book, Bookmark } from 'lucide-react-native';
+import { Home, Book, Bookmark, User } from 'lucide-react-native';
 
 const isWeb = Platform.OS === 'web';
 
@@ -11,6 +11,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
+        tabBarHideOnKeyboard: true,
+        tabBarPosition: 'bottom',
         tabBarBackground: () => {
           if (isWeb) return null;
           if (Platform.OS === 'ios') {
@@ -31,13 +33,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="diagnose"
-        options={{
-          title: 'Diagnose',
-          tabBarIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="guide"
         options={{
           title: 'Guide',
@@ -49,6 +44,13 @@ export default function TabLayout() {
         options={{
           title: 'Saved',
           tabBarIcon: ({ color, size }) => <Bookmark size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
         }}
       />
     </Tabs>
