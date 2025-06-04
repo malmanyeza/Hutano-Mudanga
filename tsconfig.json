@@ -3,16 +3,26 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
+<<<<<<< HEAD
       "@/*": [
         "./*"
       ]
+=======
+      "@/*": ["./*"]
+>>>>>>> e43cf9e (first commit)
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+<<<<<<< HEAD
     "nativewind-env.d.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+=======
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+>>>>>>> e43cf9e (first commit)
   ]
 }
