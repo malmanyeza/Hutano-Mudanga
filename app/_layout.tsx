@@ -9,7 +9,7 @@ import { SplashScreen } from 'expo-router';
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
-import { DiagnosisAssistantProvider } from '../hooks/DiagnosisAssistantContext';
+import { DiagnosisAssistantProvider } from '@/hooks/DiagnosisAssistantContext';
 
 export default function RootLayout() {
   useFrameworkReady();

@@ -11,6 +11,8 @@ export interface DiagnosisAssistantContextType {
   setCurrentDiagnosis: (diagnosis: any) => void;
   saveDiagnosis: (notes?: string) => Promise<any>;
   clearChat: () => void;
+  tempDiagnosis: any | null;
+  setTempDiagnosis: (diagnosis: any) => void;
 }
 
 export function useDiagnosisAssistant(): DiagnosisAssistantContextType;

@@ -9,22 +9,17 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-<<<<<<< HEAD
       "supportsTablet": true,
       "bundleIdentifier": "com.malverneas.boltexponativewind",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
-=======
-      "supportsTablet": true
->>>>>>> e43cf9e (first commit)
     },
     "web": {
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
-<<<<<<< HEAD
     "plugins": [
       "expo-router",
       "expo-font"
@@ -33,10 +28,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "546e0fa6-d1f2-4aa4-92a3-ecd975e67d00"
-      }
+      "router": {}
     },
     "android": {
       "package": "com.hutano_mudanga",
@@ -54,11 +46,6 @@
         "android.hardware.ar"
       ],
       "googlePlayServicesVersion": "default"
-=======
-    "plugins": ["expo-router"],
-    "experiments": {
-      "typedRoutes": true
->>>>>>> e43cf9e (first commit)
     }
   }
 }

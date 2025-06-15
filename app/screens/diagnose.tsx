@@ -46,7 +46,9 @@ export default function DiagnoseScreen() {
     sendDiagnosisMessage,
     isAssistantProcessing,
     setAssistantMessages,
-    saveDiagnosis
+    saveDiagnosis,
+    tempDiagnosis,
+    setTempDiagnosis
   } = useDiagnosisAssistant();
 
   // Auto-scroll when messages change or when keyboard appears/disappears
@@ -80,26 +82,19 @@ export default function DiagnoseScreen() {
     setInputText('');
   };
 
-  const handleSaveDiagnosis = (message: any) => {
-    // Only allow saving assistant messages
-    if (message.role !== 'assistant') return;
-    
-    // Try to extract disease_name directly from the structured format (disease_name: "Name")
-    const diseaseNameMatch = message.content.match(/disease name[:\s]+(.*?)(?=[\n\r]|$)/i);
-    let diseaseName = '';
-    
-    if (diseaseNameMatch && diseaseNameMatch[1]) {
-      // Clean up the extracted disease name (remove stars, quotes, etc.)
-      diseaseName = diseaseNameMatch[1].trim().replace(/[*"\n\r]/g, '');
-    } else {
-      // Fall back to generic extraction
-      diseaseName = extractDiseaseTitle(message.content);
-    }
+  const handleSaveDiagnosis = () => {
+    if (!tempDiagnosis) return;
     
     setDiagnosisToSave({
-      title: diseaseName, // Use the properly extracted disease name as title
-      message: message.content,
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      title: tempDiagnosis.disease,
+      message: JSON.stringify({
+        riskLevel: tempDiagnosis.riskLevel,
+        matchingSymptoms: tempDiagnosis.matchingSymptoms,
+        treatmentAdvice: tempDiagnosis.treatmentAdvice,
+        preventionTips: tempDiagnosis.preventionTips,
+        references: tempDiagnosis.references
+      }),
+      date: new Date().toISOString(),
     });
     setDiagnosisNotes('');
     setIsSaveModalVisible(true);
@@ -108,13 +103,7 @@ export default function DiagnoseScreen() {
   const handleConfirmSave = async () => {
     if (!diagnosisToSave) return;
     
-    const diagnosisData = {
-      ...diagnosisToSave,
-      notes: diagnosisNotes,
-      status: 'Monitoring',
-    };
-    
-    const success = await saveDiagnosis(diagnosisData);
+    const success = await saveDiagnosis(diagnosisNotes);
     if (success) {
       // Show success feedback
       alert('Diagnosis saved successfully');
@@ -165,6 +154,14 @@ export default function DiagnoseScreen() {
       <View style={styles.loadingContainer}>
         <ActivityIndicator color="#c89826" size="small" />
         <Text style={styles.loadingText}>{steps[currentStep]}</Text>
+        <View style={styles.dotsContainer}>
+          {[0, 1, 2].map((dot) => (
+            <View
+              key={dot}
+              style={[styles.dot, { opacity: (Date.now() / 500) % 3 === dot ? 1 : 0.3 }]}
+            />
+          ))}
+        </View>
       </View>
     );
   };
@@ -208,15 +205,13 @@ export default function DiagnoseScreen() {
                 styles.messageContainer,
                 message.role === 'user' ? styles.userMessage : styles.aiMessage
               ]}>
-                <Text style={[styles.message, message.role === 'user' ? { color: '#fff' } : null]}>
-                {message.content}
+                <Text style={styles.message}>{message.content}</Text>
                 
-                </Text>
                 {/* Only show save button for messages with disease information */}
                 {message.role === 'assistant' && isDiseaseInformation(message.content) && (
                   <TouchableOpacity 
                     style={styles.saveButton}
-                    onPress={() => handleSaveDiagnosis(message)}
+                    onPress={handleSaveDiagnosis}
                   >
                     <Save size={16} color="#6f5415" />
                     <Text style={styles.saveButtonText}>Save Diagnosis</Text>
@@ -275,7 +270,7 @@ export default function DiagnoseScreen() {
 
         {/* Save Diagnosis Modal */}
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={isSaveModalVisible}
           onRequestClose={() => setIsSaveModalVisible(false)}
@@ -283,32 +278,64 @@ export default function DiagnoseScreen() {
           <View style={styles.centeredView}>
             <View style={styles.modalView}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Save This Diagnosis</Text>
+                <Text style={styles.modalTitle}>Save Diagnosis</Text>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setIsSaveModalVisible(false)}
                 >
-                  <X size={20} color="#34444c" />
+                  <X size={24} color="#34444c" />
                 </TouchableOpacity>
               </View>
-              
-              <Text style={styles.diagnosisTitle}>{diagnosisToSave?.title}</Text>
-              
-              <Text style={styles.inputLabel}>Add notes about this diagnosis:</Text>
-              <TextInput
-                style={styles.notesInput}
-                multiline
-                placeholder="E.g., Observed symptoms, treatments applied, etc."
-                value={diagnosisNotes}
-                onChangeText={setDiagnosisNotes}
-              />
-              
-              <Pressable
-                style={styles.saveConfirmButton}
-                onPress={handleConfirmSave}
-              >
-                <Text style={styles.saveConfirmButtonText}>Save to History</Text>
-              </Pressable>
+
+              {diagnosisToSave && tempDiagnosis && (
+                <View style={styles.modalContent}>
+                  <ScrollView style={styles.modalScroll}>
+                    <Text style={styles.diagnosisTitle}>{tempDiagnosis.disease}</Text>
+                    
+                    <Text style={styles.sectionTitle}>Risk Level</Text>
+                    <Text style={styles.sectionContent}>{tempDiagnosis.riskLevel}</Text>
+
+                    <Text style={styles.sectionTitle}>Matching Symptoms</Text>
+                    {tempDiagnosis.matchingSymptoms.map((symptom, index) => (
+                      <Text key={index} style={styles.symptomItem}>• {symptom}</Text>
+                    ))}
+
+                    <Text style={styles.sectionTitle}>Treatment Advice</Text>
+                    <Text style={styles.sectionContent}>{tempDiagnosis.treatmentAdvice}</Text>
+
+                    <Text style={styles.sectionTitle}>Prevention Tips</Text>
+                    <Text style={styles.sectionContent}>{tempDiagnosis.preventionTips}</Text>
+
+                    {tempDiagnosis.references && tempDiagnosis.references.length > 0 && (
+                      <>
+                        <Text style={styles.sectionTitle}>References</Text>
+                        {tempDiagnosis.references.map((ref, index) => (
+                          <Text key={index} style={styles.sectionContent}>• {ref}</Text>
+                        ))}
+                      </>
+                    )}
+
+                    <Text style={styles.sectionTitle}>Additional Notes</Text>
+                    <TextInput
+                      style={styles.notesInput}
+                      multiline
+                      placeholder="Add any additional notes about this diagnosis..."
+                      value={diagnosisNotes}
+                      onChangeText={setDiagnosisNotes}
+                    />
+                    <View style={{ height: 20 }} />
+                  </ScrollView>
+
+                  <View style={styles.modalFooter}>
+                    <TouchableOpacity
+                      style={styles.saveConfirmButton}
+                      onPress={handleConfirmSave}
+                    >
+                      <Text style={styles.saveConfirmButtonText}>Save Diagnosis</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
         </Modal>
@@ -318,6 +345,103 @@ export default function DiagnoseScreen() {
 }
 
 const styles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: spacing.lg
+  },
+  modalView: {
+    width: '100%',
+    maxHeight: '90%',
+    backgroundColor: colors.background.light,
+    borderRadius: layout.borderRadius.large,
+    padding: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text.primary
+  },
+  modalScroll: {
+    flex: 1,
+    padding: spacing.lg,
+  },
+  modalFooter: {
+    padding: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    backgroundColor: colors.background.light,
+  },
+  diagnosisTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: spacing.md
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs
+  },
+  sectionContent: {
+    fontSize: 15,
+    color: colors.text.primary,
+    lineHeight: 20,
+    marginBottom: spacing.xs
+  },
+  symptomItem: {
+    fontSize: 15,
+    color: colors.text.primary,
+    marginLeft: spacing.sm,
+    marginBottom: spacing.xs
+  },
+  closeButton: {
+    padding: spacing.xs
+  },
+  notesInput: {
+    backgroundColor: Platform.select({
+      web: 'rgba(255, 255, 255, 0.85)',
+      ios: 'transparent',
+      android: 'rgba(255, 255, 255, 0.98)'
+    }),
+    borderRadius: layout.borderRadius.medium,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    color: colors.text.primary
+  },
+  saveConfirmButton: {
+    backgroundColor: colors.primary,
+    borderRadius: layout.borderRadius.medium,
+    padding: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md
+  },
+  saveConfirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600'
+  },
 
   loadingContainer: {
     flexDirection: 'row',
@@ -413,7 +537,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: 16,
+    paddingBottom: 24,
     flexGrow: 1,
   },
   title: {
@@ -428,48 +553,47 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     flex: 1,
+    marginTop: 8,
   },
   messageContainer: {
+    backgroundColor: Platform.select({
+      web: 'rgba(255, 255, 255, 0.95)',
+      ios: 'rgba(255, 255, 255, 0.95)',
+      android: 'rgba(255, 255, 255, 0.95)',
+    }),
     borderRadius: 20,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    padding: 16,
+    marginVertical: 8,
+    marginHorizontal: 12,
     maxWidth: '85%',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 12,
       },
       android: {
-        elevation: 2,
+        elevation: 3,
+      },
+      web: {
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
       },
     }),
   },
   userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#6f5415',
+    backgroundColor: '#92ccce',
     borderBottomRightRadius: 4,
-    marginLeft: '15%',
   },
   aiMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: Platform.select({
-      web: 'rgba(255, 255, 255, 0.95)',
-      ios: 'rgba(255, 255, 255, 0.85)',
-      android: 'rgba(255, 255, 255, 0.95)',
-    }),
     borderBottomLeftRadius: 4,
-    marginRight: '15%',
   },
   message: {
-    ...typography.body,
-    color: Platform.select({
-      ios: colors.text.primary,
-      android: colors.text.primary,
-      web: colors.text.primary,
-    }),
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#34444c',
   },
   inputWrapper: {
     paddingHorizontal: 20,
@@ -479,24 +603,29 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     backgroundColor: Platform.select({
-      web: 'rgba(255, 255, 255, 0.85)',
-      ios: 'transparent',
+      web: 'rgba(255, 255, 255, 0.98)',
+      ios: 'rgba(255, 255, 255, 0.98)',
       android: 'rgba(255, 255, 255, 0.98)',
     }),
-    borderRadius: layout.borderRadius.medium,
-    padding: spacing.md,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    marginHorizontal: 12,
+    marginBottom: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        overflow: 'hidden',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
+      },
+      web: {
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
       },
     }),
   },
@@ -536,16 +665,22 @@ const styles = StyleSheet.create({
   modalView: {
     backgroundColor: colors.background.light,
     borderRadius: layout.borderRadius.large,
-    padding: spacing.xl,
     width: '90%',
-    maxHeight: '60%',
+    maxHeight: '80%',
+    overflow: 'hidden',
     ...layout.shadow.large,
+  },
+  modalContent: {
+    flex: 1,
+    flexDirection: 'column',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: spacing.md,
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   modalTitle: {
     fontFamily: 'Poppins-SemiBold',

@@ -3,10 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable,
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, X } from 'lucide-react-native';
-<<<<<<< HEAD
 import { colors, typography, spacing, layout } from '../../styles/shared';
-=======
->>>>>>> e43cf9e (first commit)
 
 const isWeb = Platform.OS === 'web';
 const BlurContainer = isWeb ? View : BlurView;
@@ -16,7 +13,6 @@ type Disease = {
   name: string;
   description: string;
   severity: string;
-<<<<<<< HEAD
   treatment: {
     immediateAction?: string;
     medications?: string;
@@ -24,14 +20,11 @@ type Disease = {
     supportiveCare?: string[];
   };
   prevention: string[];
-=======
->>>>>>> e43cf9e (first commit)
 };
 
 const DISEASES: Disease[] = [
   {
     id: 1,
-<<<<<<< HEAD
     name: 'Anthrax',
     description: 'A serious bacterial disease that can affect both animals and humans',
     severity: 'High',
@@ -175,23 +168,6 @@ const DISEASES: Disease[] = [
       'Vaccination',
       'Control biting insects (vectors)',
     ],
-=======
-    name: 'Foot and Mouth Disease',
-    description: 'A highly contagious viral disease affecting cloven-hoofed animals',
-    severity: 'High',
-  },
-  {
-    id: 2,
-    name: 'Bovine Respiratory Disease',
-    description: 'Complex of diseases affecting the respiratory system',
-    severity: 'Medium',
-  },
-  {
-    id: 3,
-    name: 'Mastitis',
-    description: 'Inflammation of the mammary gland and udder tissue',
-    severity: 'Medium',
->>>>>>> e43cf9e (first commit)
   },
 ];
 
@@ -211,23 +187,16 @@ export default function GuideScreen() {
 
   return (
     <LinearGradient colors={['#edcc9a', '#92ccce']} style={styles.container}>
-<<<<<<< HEAD
-      <BlurContainer intensity={80} tint="light" style={styles.header}>
-        <BlurContainer intensity={80} tint="light" style={styles.headerContent}>
+      <LinearGradient colors={['#edcc9a', '#92ccce']} style={styles.header}>
+        <View  style={styles.headerContent}>
           <Text style={styles.title}>Disease Guide</Text>
           <Text style={styles.subtitle}>Common cattle diseases and their treatments</Text>
-        </BlurContainer>
-      </BlurContainer>
+        </View>
+      </LinearGradient>
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.contentContainer}
       >
-=======
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.title}>Disease Guide</Text>
-        <Text style={styles.subtitle}>Common cattle diseases and their treatments</Text>
-
->>>>>>> e43cf9e (first commit)
         {DISEASES.map((disease) => (
           <TouchableOpacity key={disease.id} onPress={() => openModal(disease)}>
             <BlurContainer intensity={80} tint="light" style={styles.diseaseCard}>
@@ -263,7 +232,6 @@ export default function GuideScreen() {
                   <>
                     <Text style={styles.modalTitle}>{selectedDisease.name}</Text>
                     <Text style={styles.modalDescription}>{selectedDisease.description}</Text>
-<<<<<<< HEAD
                     <View style={[styles.severityBadge, { backgroundColor: selectedDisease.severity === 'High' ? '#ef4444' : '#f59e0b', marginBottom: 16 }]}> 
                       <Text style={styles.severityText}>{selectedDisease.severity} Severity</Text>
                     </View>
@@ -302,12 +270,6 @@ export default function GuideScreen() {
                         <Text key={index} style={styles.preventionText}>• {step}</Text>
                       ))}
                     </View>
-=======
-                    <View style={[styles.severityBadge, { backgroundColor: '#c89826', marginBottom: 16 }]}> 
-                      <Text style={styles.severityText}>{selectedDisease.severity} Severity</Text>
-                    </View>
-                    {/* Placeholder for more details. Add more fields here if available. */}
->>>>>>> e43cf9e (first commit)
                   </>
                 )}
               </ScrollView> 
@@ -320,7 +282,6 @@ export default function GuideScreen() {
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
   sectionTitle: {
     ...typography.subtitle,
     color: colors.text.primary,
@@ -349,8 +310,6 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
-=======
->>>>>>> e43cf9e (first commit)
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.25)',
@@ -360,16 +319,11 @@ const styles = StyleSheet.create({
   modalGradient: {
     width: '95%',
     maxWidth: 520,
-<<<<<<< HEAD
     borderRadius: layout.borderRadius.large,
-=======
-    borderRadius: 20,
->>>>>>> e43cf9e (first commit)
     overflow: 'hidden',
     alignSelf: 'center',
   },
   modalContainer: {
-<<<<<<< HEAD
     padding: spacing.xl,
     borderRadius: layout.borderRadius.large,
     backgroundColor: Platform.select({
@@ -410,63 +364,14 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     ...Platform.select({
       ios: layout.shadow.small
-=======
-    padding: 24,
-    borderRadius: 20,
-    backgroundColor: Platform.OS === 'web' ? 'rgba(255,255,255,0.95)' : 'transparent',
-    maxHeight: '100%',
-    width: '100%',
-    alignSelf: 'center',
-  },
-  modalContent: {
-    alignItems: 'flex-start',
-    paddingBottom: 24,
-  },
-  modalTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 22,
-    color: '#34444c',
-    marginBottom: 10,
-  },
-  modalDescription: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 16,
-    color: '#987a59',
-    marginBottom: 12,
-  },
-  xButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 20,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: 20,
-    padding: 4,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
->>>>>>> e43cf9e (first commit)
     }),
   },
   container: {
     flex: 1,
   },
-<<<<<<< HEAD
   header: {
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.1)',
-    backgroundColor: Platform.select({
-      web: 'rgba(237, 204, 154, 0.95)',
-      ios: colors.background.transparent,
-      android: 'rgba(237, 204, 154, 0.95)',
-    }),
   },
   headerContent: {
     paddingHorizontal: spacing.lg,
@@ -478,13 +383,10 @@ const styles = StyleSheet.create({
       android: 'rgba(237, 204, 154, 0.95)',
     }),
   },
-=======
->>>>>>> e43cf9e (first commit)
   scrollView: {
     flex: 1,
   },
   contentContainer: {
-<<<<<<< HEAD
     padding: spacing.lg,
     paddingBottom: spacing.xl * 4,
   },
@@ -507,49 +409,16 @@ const styles = StyleSheet.create({
     borderRadius: layout.borderRadius.medium,
     padding: spacing.md,
     marginBottom: spacing.sm,
-=======
-    padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 100,
-  },
-  title: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 24,
-    color: '#34444c',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 16,
-    color: '#987a59',
-    marginBottom: 20,
-  },
-  diseaseCard: {
-    backgroundColor: isWeb ? 'rgba(255, 255, 255, 0.85)' : 'transparent',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 10,
->>>>>>> e43cf9e (first commit)
     flexDirection: 'row',
     alignItems: 'center',
     ...Platform.select({
       ios: {
-<<<<<<< HEAD
         ...layout.shadow.medium,
-=======
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
->>>>>>> e43cf9e (first commit)
         overflow: 'hidden',
       },
       android: {
         elevation: 4,
-<<<<<<< HEAD
         overflow: 'hidden',
-=======
->>>>>>> e43cf9e (first commit)
       },
     }),
   },
@@ -557,7 +426,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   diseaseName: {
-<<<<<<< HEAD
     ...typography.subtitle,
     color: colors.text.primary,
     marginBottom: spacing.xs,
@@ -578,28 +446,5 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontSize: 12,
     color: colors.background.light,
-=======
-    fontFamily: 'Poppins-Medium',
-    fontSize: 16,
-    color: '#34444c',
-    marginBottom: 4,
-  },
-  diseaseDescription: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 14,
-    color: '#987a59',
-    marginBottom: 8,
-  },
-  severityBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  severityText: {
-    fontFamily: 'Nunito-Regular',
-    fontSize: 12,
-    color: 'white',
->>>>>>> e43cf9e (first commit)
   },
 });

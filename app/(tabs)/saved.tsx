@@ -53,6 +53,7 @@ export default function SavedScreen() {
   };
 
   const openDiagnosisDetails = (diagnosis: SavedDiagnosis) => {
+    console.log(diagnosis)
     setSelectedDiagnosis(diagnosis);
     setEditedNotes(diagnosis.notes?.message || '');
     setModalVisible(true);
@@ -84,7 +85,7 @@ export default function SavedScreen() {
             <BlurContainer intensity={80} tint="light" style={styles.diagnosisCard}>
               <View style={styles.cardHeader}>
                 <View style={styles.titleContainer}>
-                  <Text style={styles.condition}>{diagnosis.condition || 'Unknown Disease'}</Text>
+                  <Text style={styles.condition}>{diagnosis.disease || 'Unknown Disease'}</Text>
                   <Text style={styles.date}>{diagnosis.date || new Date().toLocaleDateString()}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[diagnosis.status] }]}>
@@ -96,21 +97,18 @@ export default function SavedScreen() {
                 <View style={styles.riskContainer}>
                   <Text style={styles.detailLabel}>Risk Level:</Text>
                   <View style={styles.riskLevelContainer}>
-                    <Text style={styles.riskEmoji}>{getRiskLevelInfo(diagnosis.details?.riskLevel).emoji}</Text>
-                    <Text style={[styles.riskLevel, { color: getRiskLevelInfo(diagnosis.details?.riskLevel).color }]}>
-                      {diagnosis.details?.riskLevel || 'Not classified'}
+                    <Text style={styles.riskEmoji}>{getRiskLevelInfo(diagnosis.riskLevel).emoji}</Text>
+                    <Text style={[styles.riskLevel, { color: getRiskLevelInfo(diagnosis.riskLevel).color }]}>
+                      {diagnosis.riskLevel || 'Not classified'}
                     </Text>
                   </View>
                 </View>
-                {diagnosis.details?.matchingSymptoms && diagnosis.details.matchingSymptoms.length > 0 && (
-                  <View style={styles.symptomsContainer}>
-                    <Text style={styles.detailLabel}>Symptoms:</Text>
-                    <Text style={styles.symptoms} numberOfLines={1}>
-                      {diagnosis.details.matchingSymptoms.slice(0, 2).join(', ')}
-                      {diagnosis.details.matchingSymptoms.length > 2 ? '...' : ''}
-                    </Text>
-                  </View>
-                )}
+                <View style={styles.symptomsContainer}>
+                  <Text style={styles.detailLabel}>Symptoms:</Text>
+                  <Text style={styles.symptoms} numberOfLines={2}>
+                    {diagnosis.matchingSymptoms?.join(', ') || 'No symptoms recorded'}
+                  </Text>
+                </View>
               </View>
             </BlurContainer>
           </TouchableOpacity>
@@ -119,51 +117,86 @@ export default function SavedScreen() {
 
       {/* Details Modal */}
       <Modal
+        animationType="fade"
+        transparent={true}
         visible={modalVisible}
-        animationType="slide"
-        transparent
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalBackdrop}>
-          <LinearGradient colors={["#edcc9a", "#92ccce"]} style={styles.modalGradient}>
-            <View  style={styles.modalContainer}>
-              <Pressable style={styles.xButton} onPress={() => setModalVisible(false)}>
-                <X size={28} color={colors.text.primary} />
-              </Pressable>
+          <LinearGradient
+            colors={['#edcc9a', '#92ccce']}
+            style={styles.modalGradient}
+          >
+            <BlurContainer
+              intensity={80}
+              tint="light"
+              style={styles.modalContainer}
+            >
+              <TouchableOpacity
+                style={styles.xButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <X size={24} color="#34444c" />
+              </TouchableOpacity>
 
-              {selectedDiagnosis && (
+              <ScrollView style={styles.modalScroll}>
                 <View style={styles.modalContent}>
-                  <ScrollView style={styles.modalScroll}>
-                    <Text style={styles.modalTitle}>{selectedDiagnosis.condition}</Text>
-                    <Text style={styles.modalDate}>{selectedDiagnosis.date}</Text>
+                  {selectedDiagnosis && (
+                    <>
+                      <Text style={styles.modalTitle}>{selectedDiagnosis.disease}</Text>
+                      <Text style={styles.modalDate}>{selectedDiagnosis.date}</Text>
 
-                    {/* Status Selection */}
-                    <Text style={styles.sectionTitle}>Status</Text>
-                    <View style={styles.statusButtons}>
-                      {(Object.keys(STATUS_COLORS) as Array<SavedDiagnosis['status']>).map((status) => (
-                        <TouchableOpacity
-                          key={status}
-                          style={[
-                            styles.statusOption,
-                            { backgroundColor: STATUS_COLORS[status] },
-                            selectedDiagnosis.status === status && styles.selectedStatus,
-                          ]}
-                          onPress={() => handleStatusClick(status)}
-                        >
-                          <Text style={styles.statusOptionText}>{status}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
+                      <View style={styles.riskLevelBadge}>
+                        <Text style={[styles.riskLevelText, { color: getRiskLevelInfo(selectedDiagnosis.riskLevel).color }]}>
+                          {getRiskLevelInfo(selectedDiagnosis.riskLevel).emoji} Risk Level: {selectedDiagnosis.riskLevel}
+                        </Text>
+                      </View>
 
-                    {/* Detailed Information */}
-                    
-                    <Text style={styles.sectionContent}>
-                      {selectedDiagnosis.notes?.message ? removeAsterisks(selectedDiagnosis.notes.message) : 'No notes added'}
-                    </Text>
-                  </ScrollView>
+                      <Text style={styles.sectionTitle}>Matching Symptoms</Text>
+                      <View style={styles.symptomsContainer}>
+                        {selectedDiagnosis.matchingSymptoms.map((symptom, index) => (
+                          <Text key={index} style={styles.symptomItem}>• {symptom}</Text>
+                        ))}
+                      </View>
+
+                      <Text style={styles.sectionTitle}>Treatment Advice</Text>
+                      <Text style={styles.sectionContent}>{selectedDiagnosis.treatmentAdvice}</Text>
+
+                      <Text style={styles.sectionTitle}>Prevention Tips</Text>
+                      <Text style={styles.sectionContent}>{selectedDiagnosis.preventionTips}</Text>
+
+                      {selectedDiagnosis.references && selectedDiagnosis.references.length > 0 && (
+                        <>
+                          <Text style={styles.sectionTitle}>References</Text>
+                          {selectedDiagnosis.references.map((ref, index) => (
+                            <Text key={index} style={styles.referenceItem}>• {ref}</Text>
+                          ))}
+                        </>
+                      )}
+
+                      <Text style={styles.sectionTitle}>Notes</Text>
+                      <Text style={styles.sectionContent}>{selectedDiagnosis.notes || 'No notes added'}</Text>
+                      <Text style={styles.sectionTitle}>Status</Text>
+                      <View style={styles.statusButtons}>
+                        {Object.keys(STATUS_COLORS).map((status) => (
+                          <TouchableOpacity
+                            key={status}
+                            style={[
+                              styles.statusOption,
+                              { backgroundColor: STATUS_COLORS[status as keyof typeof STATUS_COLORS] },
+                              selectedDiagnosis.status === status && styles.selectedStatus,
+                            ]}
+                            onPress={() => handleStatusClick(status as SavedDiagnosis['status'])}
+                          >
+                            <Text style={styles.statusOptionText}>{status}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </>
+                  )}
                 </View>
-              )}
-            </View>
+              </ScrollView>
+            </BlurContainer>
           </LinearGradient>
         </View>
       </Modal>
@@ -287,6 +320,24 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     marginTop: 40,
+  },
+  riskLevelBadge: {
+    backgroundColor: colors.background.light,
+    borderRadius: layout.borderRadius.medium,
+    padding: spacing.sm,
+    marginVertical: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  riskLevelText: {
+    ...typography.body,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  referenceItem: {
+    ...typography.body,
+    color: colors.text.secondary,
+    marginLeft: spacing.md,
+    marginBottom: spacing.xs,
   },
   modalScroll: {
     flex: 1,
